@@ -75,6 +75,18 @@ form.addEventListener("submit", async (e) => {
     notes: fd.get("notes")
   };
 
+  // Books marked "Read it" in an earlier round count as books they've read,
+  // so they're fed back in (and never recommended again).
+  const typed = new Set(payload.booksRead.map((b) => b.title.trim().toLowerCase()));
+  for (const saved of readLog()) {
+    const title = saved.title.trim();
+    if (!title || typed.has(title.toLowerCase())) continue;
+    payload.booksRead.push({
+      title: saved.author ? `${title} by ${saved.author}` : title,
+      rating: String(saved.rating)
+    });
+  }
+
   btn.disabled = true;
   btn.textContent = "Searching the stacks...";
   statusEl.className = "status";
@@ -112,6 +124,114 @@ function renderBook(b) {
     <p>${esc(b.why)}</p>
     ${b.similar_to ? `<p class="meta">If you liked ${esc(b.similar_to)}</p>` : ""}
     ${b.content_notes ? `<p class="note">${esc(b.content_notes)}</p>` : ""}
-    <p><a href="https://openlibrary.org/search?q=${q}" target="_blank" rel="noopener">Look it up on Open Library</a></p>`;
+    <p><a href="https://openlibrary.org/search?q=${q}" target="_blank" rel="noopener">Look it up on Open Library</a></p>
+    <div class="readbar"></div>`;
+  const bar = li.querySelector(".readbar");
+  bar._book = b;
+  paintReadBar(bar, b);
   return li;
 }
+
+// --- reading log: books marked "Read it" plus the 1-5 rating -------------
+const READ_LOG_KEY = "nc_read_log";
+
+function readLog() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(READ_LOG_KEY) || "[]");
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLog(log) {
+  try { localStorage.setItem(READ_LOG_KEY, JSON.stringify(log)); } catch { /* storage full or blocked */ }
+}
+
+function bookKey(b) {
+  return `${String(b.title || "").trim().toLowerCase()}|${String(b.author || "").trim().toLowerCase()}`;
+}
+
+function ratingFor(b) {
+  const hit = readLog().find((x) => x.key === bookKey(b));
+  return hit ? Number(hit.rating) || 0 : 0;
+}
+
+function setRating(b, rating) {
+  const log = readLog().filter((x) => x.key !== bookKey(b));
+  if (rating) {
+    log.push({ key: bookKey(b), title: b.title || "", author: b.author || "", rating, at: new Date().toISOString() });
+  }
+  saveLog(log);
+  updateLogNote();
+}
+
+function stars(n) {
+  return "\u2605".repeat(n) + "\u2606".repeat(Math.max(0, 5 - n));
+}
+
+function paintReadBar(bar, b) {
+  const current = ratingFor(b);
+  bar.innerHTML = "";
+  if (!current) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ghost readbtn";
+    btn.textContent = "Read it";
+    btn.onclick = () => askRating(bar, b);
+    bar.appendChild(btn);
+    return;
+  }
+  const label = document.createElement("span");
+  label.className = "readstate";
+  label.textContent = `Read it \u00b7 you rated it ${stars(current)}`;
+  bar.appendChild(label);
+  const change = document.createElement("button");
+  change.type = "button";
+  change.className = "linkbtn";
+  change.textContent = "change";
+  change.onclick = () => askRating(bar, b);
+  bar.appendChild(change);
+}
+
+function askRating(bar, b) {
+  bar.innerHTML = "";
+  const q = document.createElement("span");
+  q.className = "readstate";
+  q.textContent = "How did you like it?";
+  bar.appendChild(q);
+  for (let i = 1; i <= 5; i++) {
+    const s = document.createElement("button");
+    s.type = "button";
+    s.className = "starbtn";
+    s.textContent = String(i);
+    s.title = `${i} out of 5`;
+    s.setAttribute("aria-label", `Rate it ${i} out of 5`);
+    s.onclick = () => { setRating(b, i); paintReadBar(bar, b); };
+    bar.appendChild(s);
+  }
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "linkbtn";
+  cancel.textContent = "cancel";
+  cancel.onclick = () => paintReadBar(bar, b);
+  bar.appendChild(cancel);
+}
+
+function updateLogNote() {
+  const el = document.getElementById("logNote");
+  if (!el) return;
+  const log = readLog();
+  if (!log.length) {
+    el.textContent = "";
+    return;
+  }
+  el.innerHTML = `${log.length} book${log.length === 1 ? "" : "s"} in your reading log, used to sharpen the next round. <button type="button" class="linkbtn" id="clearLog">clear</button>`;
+  el.querySelector("#clearLog").onclick = () => {
+    saveLog([]);
+    updateLogNote();
+    document.querySelectorAll(".readbar").forEach((bar) => { if (bar._book) paintReadBar(bar, bar._book); });
+  };
+}
+
+updateLogNote();

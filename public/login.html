@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Next Chapter - locked</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="gate">
+  <main class="gate-card">
+    <h1>Next Chapter</h1>
+    <p class="gate-sub">This site is private. Enter the access code to continue.</p>
+    <form id="loginForm" autocomplete="off">
+      <label class="gate-label" for="code">Access code</label>
+      <input id="code" name="code" type="password" autocomplete="current-password" required autofocus>
+      <button type="submit" id="gateSubmit" class="primary">Unlock</button>
+    </form>
+    <p id="gateStatus" class="status" role="status" aria-live="polite"></p>
+  </main>
+  <script>
+    const form = document.getElementById("loginForm");
+    const statusEl = document.getElementById("gateStatus");
+    const btn = document.getElementById("gateSubmit");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusEl.className = "status";
+      statusEl.textContent = "Checking...";
+      btn.disabled = true;
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: document.getElementById("code").value })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Could not unlock.");
+        window.location.replace("/");
+      } catch (err) {
+        statusEl.className = "status error";
+        statusEl.textContent = err.message;
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
