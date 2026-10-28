@@ -1,12 +1,14 @@
 {
   "name": "next-chapter",
   "version": "1.0.0",
-  "description": "Book recommendation site powered by the Mistral API",
+  "description": "Book recommendation site powered by OpenRouter",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "express": "^4.19.2"
   }
