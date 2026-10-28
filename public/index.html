@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Next Chapter - find your next book</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>Next Chapter</h1>
+    <p>Tell us what you've read and how you like to read. We'll suggest what to pick up next.</p>
+  </header>
+
+  <main class="layout">
+    <form id="form" class="panel" autocomplete="off">
+      <fieldset>
+        <legend>Books you've read</legend>
+        <div id="books"></div>
+        <button type="button" id="addBook" class="ghost">Add another book</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Favorite genres</legend>
+        <div class="chips" data-group="favGenres"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Genres to avoid</legend>
+        <div class="chips" data-group="avoidGenres"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Favorite authors</legend>
+        <input type="text" name="favAuthors" placeholder="e.g. Ursula K. Le Guin, Tana French">
+      </fieldset>
+
+      <fieldset>
+        <legend>Fiction or nonfiction</legend>
+        <div class="radios" data-radio="fictionPref" data-options="Fiction,Nonfiction,Both"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>What mood are you in?</legend>
+        <div class="chips" data-group="moods"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Themes you love</legend>
+        <div class="chips" data-group="themes"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Tone</legend>
+        <div class="chips" data-group="tones"></div>
+      </fieldset>
+
+      <div class="row2">
+        <fieldset>
+          <legend>Pacing</legend>
+          <div class="radios" data-radio="pace" data-options="Slow and immersive,Steady,Fast and gripping"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Length</legend>
+          <div class="radios" data-radio="length" data-options="Short (under 250 pages),Medium,Long and epic,No preference"></div>
+        </fieldset>
+      </div>
+
+      <div class="row2">
+        <fieldset>
+          <legend>Setting or era</legend>
+          <input type="text" name="setting" placeholder="e.g. 1920s Paris, far-future space, rural Japan">
+        </fieldset>
+        <fieldset>
+          <legend>Audience</legend>
+          <select name="audience">
+            <option value="">Any</option>
+            <option>Adult</option>
+            <option>Young adult</option>
+            <option>Middle grade</option>
+            <option>Children's</option>
+          </select>
+        </fieldset>
+      </div>
+
+      <fieldset>
+        <legend>How do you read?</legend>
+        <div class="chips" data-group="formats"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Content to avoid</legend>
+        <input type="text" name="contentAvoid" placeholder="e.g. graphic violence, animal death">
+      </fieldset>
+
+      <fieldset>
+        <legend>How adventurous should we be?</legend>
+        <div class="slider">
+          <span>Close to what I know</span>
+          <input type="range" name="adventure" min="1" max="5" value="3" aria-label="Adventurousness">
+          <span>Surprise me</span>
+        </div>
+      </fieldset>
+
+      <div class="row2">
+        <fieldset>
+          <legend>How many suggestions?</legend>
+          <select name="count">
+            <option>3</option><option selected>5</option><option>8</option><option>10</option>
+          </select>
+        </fieldset>
+      </div>
+
+      <fieldset>
+        <legend>Anything else?</legend>
+        <textarea name="notes" rows="3" placeholder="e.g. I loved the twist ending in Gone Girl. I want a book club pick."></textarea>
+      </fieldset>
+
+      <button type="submit" id="submit" class="primary">Find my next book</button>
+    </form>
+
+    <section class="results" aria-live="polite">
+      <div id="status" class="status">Your recommendations will appear here.</div>
+      <ol id="list" class="shelf"></ol>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+AGENT INSTRUCTIONS - "Next Chapter" book recommendation site
+=============================================================
+
+GOAL
+Get this project into a GitHub repository, running locally, and deployed
+publicly. It is a Node.js (Express) app with a plain HTML/CSS/JS frontend.
+It calls the Mistral API from the server to generate book recommendations.
+
+PROJECT FILES (already written; do not rewrite them unless something is broken)
+  package.json          dependencies and "npm start" script
+  server.js             Express server, POST /api/recommend, calls Mistral
+  public/index.html     the form and results area
+  public/style.css      styling (light and dark mode)
+  public/app.js         builds the form options, sends the request, renders results
+  .env.example          template for environment variables
+  .gitignore            keeps .env and node_modules out of git
+  README.md             human-readable setup notes
+
+RULES
+  1. The Mistral API key must ONLY come from the environment variable
+     MISTRAL_API_KEY. Never hardcode it, never commit it, never put it in
+     frontend code, never print it in logs.
+  2. Never commit a .env file. Confirm .gitignore contains ".env".
+  3. Do not add a build step or a frontend framework. Keep it simple.
+
+STEP 1 - CREATE THE GITHUB REPO
+  a. In the project folder run:
+       git init
+       git add .
+       git commit -m "Initial commit: Next Chapter book recommender"
+  b. Create a new empty repository on GitHub (suggested name: next-chapter).
+  c. Connect and push:
+       git branch -M main
+       git remote add origin https://github.com/<USERNAME>/next-chapter.git
+       git push -u origin main
+  d. Verify on GitHub that .env is NOT in the repo.
+
+STEP 2 - RUN LOCALLY
+  a. Requires Node.js 18 or newer (check with: node -v).
+  b. Run: npm install
+  c. Set the key (the user will provide it; ask if you do not have it):
+       macOS/Linux:        export MISTRAL_API_KEY="<key>"
+       Windows PowerShell: $env:MISTRAL_API_KEY="<key>"
+     Or copy .env.example to .env and fill in the key (.env is gitignored).
+  d. Run: npm start
+  e. Open http://localhost:3000
+
+STEP 3 - TEST
+  a. Enter two or three books with ratings, pick a few genres, click
+     "Find my next book".
+  b. Expect 5 recommendation cards, each with title, author, and a reason.
+  c. Expected errors and fixes:
+       "The server has no MISTRAL_API_KEY set."  -> env var missing; restart
+            the server after setting it.
+       "Mistral API returned 401"                -> key is wrong or revoked.
+       "Mistral API returned 404/422"            -> model name invalid; set
+            MISTRAL_MODEL to a valid model (default: mistral-small-latest).
+       "Too many requests"                       -> built-in limit of 10
+            requests per IP per 10 minutes; wait or raise the limit in server.js.
+
+STEP 4 - DEPLOY (Render, free tier is fine)
+  a. On render.com choose New > Web Service and connect the GitHub repo.
+  b. Runtime: Node. Build command: npm install. Start command: npm start.
+  c. Under Environment, add MISTRAL_API_KEY with the user's key.
+     Optional: MISTRAL_MODEL. Do not set PORT; Render provides it.
+  d. Deploy, open the public URL, and repeat the tests from STEP 3.
+  Other hosts that run Node servers (Railway, Fly.io) work the same way:
+  same build/start commands, key set as an environment variable.
+  Note: static-only hosts (GitHub Pages) will NOT work because the key
+  must stay on a server.
+
+OPTIONAL IMPROVEMENTS (only if the user asks)
+  - Add a "save my reading list" feature using localStorage in public/app.js.
+  - Add a "more like this" button on each result that re-calls /api/recommend.
+  - Add cover images using the Open Library covers API.
+  - Add more form categories by editing the OPTIONS object in public/app.js
+    and the matching fields in server.js buildPrompt().
+
+DEFINITION OF DONE
+  - Repo is on GitHub with no secrets in it.
+  - App runs locally and returns recommendations.
+  - App is deployed at a public URL with MISTRAL_API_KEY set as an
+    environment variable on the host.
+  - Report the GitHub URL and the live URL back to the user.
