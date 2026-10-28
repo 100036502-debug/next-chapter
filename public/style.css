@@ -111,3 +111,13 @@ body.gate { display: grid; place-items: center; min-height: 100vh; padding: 20px
 .starbtn:hover, .starbtn:focus-visible { border-color: var(--marigold); background: var(--marigold); color: #1b1403; outline: none; }
 .linkbtn { border: 0; background: none; padding: 2px 4px; color: var(--plum); font: inherit; font-size: 0.9rem; text-decoration: underline; cursor: pointer; }
 .lognote { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
+
+/* --- goodreads import --- */
+.import { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.import-label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+.import input[type="file"] { width: 100%; font: inherit; font-size: 0.85rem; color: var(--muted); }
+.import input[type="file"]::file-selector-button { font: inherit; font-size: 0.85rem; padding: 6px 12px; margin-right: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); cursor: pointer; }
+.import-help { margin: 8px 0 0; font-size: 0.8rem; color: var(--muted); line-height: 1.45; }
+.import-status { margin: 8px 0 0; font-size: 0.85rem; color: var(--ink); }
+.import-status.error { color: #b3261e; }
+@media (prefers-color-scheme: dark) { .import-status.error { color: #ff8b80; } }

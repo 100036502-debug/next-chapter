@@ -179,14 +179,61 @@ function rateLimited(ip) {
 const clip = (v, n = 500) => String(v ?? "").slice(0, n).trim();
 const list = (v, n = 40) => (Array.isArray(v) ? v.slice(0, n).map((x) => clip(x, 120)).filter(Boolean) : []);
 
+// Loose title key so "Queued Up" from the model matches "Queued Up by Doe, John"
+// from an import, regardless of case, punctuation, subtitles or a leading article.
+function normKey(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function titleKeys(entry) {
+  const keys = new Set();
+  const title = typeof entry === "string" ? entry : (entry && entry.title) || "";
+  const author = typeof entry === "string" ? "" : (entry && entry.author) || "";
+  const push = (v) => { const k = normKey(v); if (k) keys.add(k); };
+  push(title);
+  if (author) push(`${title} ${author}`);
+  // Form rows arrive as "Title by Author".
+  const m = String(title).match(/^(.*?)\s+by\s+(.+)$/i);
+  if (m) {
+    push(m[1]);
+    if (m[2]) push(`${m[1]} ${m[2]}`);
+  }
+  return keys;
+}
+
+function displayLabel(entry) {
+  if (typeof entry === "string") return entry;
+  if (!entry || !entry.title) return "";
+  return entry.author ? `${entry.title} by ${entry.author}` : entry.title;
+}
+
 function buildPrompt(p) {
   const read = Array.isArray(p.booksRead)
     ? p.booksRead.slice(0, 40).map((b) => ({ title: clip(b.title, 150), rating: Number(b.rating) || null })).filter((b) => b.title)
     : [];
+  // Books already on the reader's shelf (e.g. imported from Goodreads) are
+  // excluded from results so we never recommend something they already have.
+  const clean = (arr, limit, n) => (Array.isArray(arr) ? arr.slice(0, limit).map((entry) => {
+    if (typeof entry === "string") return clip(entry, n);
+    if (!entry || !entry.title) return null;
+    return { title: clip(entry.title, n), author: clip(entry.author, 80) };
+  }).filter(Boolean) : []);
+  const queued = clean(p.toRead, 200, 120);
+  // Imported library titles that are not in the visible form: still excluded
+  // from results, but kept out of the prompt to keep it small.
+  const extraExcludes = clean(p.excludeTitles, 250, 100);
   const lines = [];
   if (read.length) {
     lines.push("Books the reader has read:");
     read.forEach((b) => lines.push(`- ${b.title}${b.rating ? ` (rated ${b.rating}/5)` : ""}`));
+  }
+  if (queued.length) {
+    lines.push(`Already on their to-read shelf, do NOT recommend these: ${queued.slice(0, 60).map(displayLabel).join("; ")}`);
   }
   const add = (label, val) => { if (val && (!Array.isArray(val) || val.length)) lines.push(`${label}: ${Array.isArray(val) ? val.join(", ") : val}`); };
   add("Favorite genres", list(p.favGenres));
@@ -205,7 +252,11 @@ function buildPrompt(p) {
   add("Adventurousness (1 = very similar to what they know, 5 = surprise me)", clip(p.adventure, 5));
   add("Anything else", clip(p.notes, 800));
   const count = Math.min(Math.max(parseInt(p.count, 10) || 5, 1), 10);
-  return { text: lines.join("\n"), count, readTitles: read.map((b) => b.title) };
+  const excludeKeys = new Set();
+  for (const group of [read, queued, extraExcludes]) {
+    for (const entry of group) for (const k of titleKeys(entry)) excludeKeys.add(k);
+  }
+  return { text: lines.join("\n"), count, excludeKeys };
 }
 
 const SYSTEM_PROMPT =
@@ -250,7 +301,7 @@ app.post("/api/recommend", async (req, res) => {
   if (!API_KEY) return res.status(500).json({ error: "The server has no OPENROUTER_API_KEY set." });
   if (rateLimited(req.ip)) return res.status(429).json({ error: "Too many requests. Try again in a few minutes." });
 
-  const { text, count, readTitles } = buildPrompt(req.body || {});
+  const { text, count, excludeKeys } = buildPrompt(req.body || {});
   if (!text.trim()) return res.status(400).json({ error: "Add at least one book, genre, or preference first." });
 
   const payload = {
@@ -291,8 +342,13 @@ app.post("/api/recommend", async (req, res) => {
 
     const data = await r.json();
     const parsed = parseModelJson(data.choices?.[0]?.message?.content);
-    const seen = new Set(readTitles.map((t) => t.toLowerCase()));
-    const recs = (parsed.recommendations || []).filter((b) => b.title && !seen.has(String(b.title).toLowerCase()));
+    const recs = (parsed.recommendations || []).filter((b) => {
+      if (!b.title) return false;
+      for (const k of titleKeys({ title: b.title, author: b.author })) {
+        if (excludeKeys.has(k)) return false;
+      }
+      return true;
+    });
     if (!recs.length) {
       console.error("OpenRouter returned no usable recommendations:", JSON.stringify(data).slice(0, 500));
       return res.status(502).json({ error: "The model did not return usable recommendations. Try again or pick another model." });

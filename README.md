@@ -81,3 +81,32 @@ book on a 1-5 scale, and the answer is stored in `localStorage` under
 `nc_read_log`. Those books are then sent with later requests as books you have
 read, with your rating, so they are excluded from results and steer the next
 round. A **clear** link next to the count wipes the log.
+
+## Importing a Goodreads library
+
+Goodreads retired its public API, so there is no OAuth "connect account" option.
+The supported route is their CSV export, which needs no key:
+
+1. On Goodreads open **My Books > Import and Export > Export to CSV**.
+2. In Next Chapter, use **Or import your Goodreads library** under the book list
+   and pick the file.
+
+What happens:
+
+- Books on the `read` shelf are loaded into the book list with your rating
+  (up to 20 rows, highest rated first). The full shelf is kept in
+  `localStorage` under `nc_library`.
+- `to-read` and `currently-reading` books are remembered under `nc_to_read` and
+  sent with every request so they are never suggested.
+- **The import only fills the book list.** Every other control (genres, moods,
+  authors, tone, pacing, setting, notes, count) is untouched, and any book rows
+  you already typed by hand are left alone, so you can import and then refine by
+  hand in the same request.
+- Matching is title-aware: "Queued Up" returned by the model still matches
+  "Queued Up by Doe, John" from the import, ignoring case, punctuation and
+  subtitles.
+- Requests stay well under the 50 kB body limit even with a 700-book library,
+  because the shelves are capped at 20 form rows, 200 to-read titles and 250
+  exclusion titles per request.
+- The parser handles a BOM, CRLF line endings, quoted fields with commas, and
+  doubled quotes inside titles.

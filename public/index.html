@@ -21,6 +21,14 @@
         <legend>Books you've read</legend>
         <div id="books"></div>
         <button type="button" id="addBook" class="ghost">Add another book</button>
+
+        <div class="import">
+          <label class="import-label" for="csvFile">Or import your Goodreads library</label>
+          <input type="file" id="csvFile" accept=".csv,text/csv">
+          <p class="import-help">In Goodreads: My Books &rarr; Import and Export &rarr; Export to CSV. Importing only fills the book list with your ratings; genres, mood, tone and everything else below still apply, so set those as well.</p>
+          <p id="importStatus" class="import-status" role="status" aria-live="polite"></p>
+          <p id="libraryNote" class="lognote"></p>
+        </div>
       </fieldset>
 
       <fieldset>
